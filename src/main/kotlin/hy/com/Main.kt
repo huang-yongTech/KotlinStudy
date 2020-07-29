@@ -1,14 +1,48 @@
 package hy.com
 
 fun main(args: Array<String>) {
-    val child = Child("zhang san", 12)
-    println(Child.haha())
+//    val child = Child("zhang san", 12)
+//    println(Child.haha())
+//
+//    child.firstProperty = "this is new first property"
+//    println(child)
+//    child.function()
 
-    child.firstProperty = "this is new first property"
-    println(child)
-    child.function()
 
-//    foo()
+    val b = BaseImpl(10)
+    val derived = Derived(b)
+    derived.print()
+    println(derived.message)
+}
+
+/**
+ * 在委托模式中，如果子类重写了父类的相关属性，但没有重写跟属性相关的方法，
+ * 那么子类在调用继承的方法，在方法内部访问的依然是父类的属性
+ */
+interface Base {
+    val message: String
+    fun print()
+}
+
+class BaseImpl(val x: Int) : Base {
+    override val message = "BaseImpl: x = $x"
+    override fun print() {
+        println(message)
+    }
+}
+
+class Derived(b: Base) : Base by b {
+    // 在 b 的 `print` 实现中不会访问到这个属性
+    override val message = "Message of Derived"
+}
+
+/**
+ * 枚举使用
+ */
+enum class RGB { RED, GREEN, BLUE }
+
+inline fun <reified T : Enum<T>> printAllValues() {
+    print(enumValues<T>().joinToString { it.name })
 }
 
 /**
