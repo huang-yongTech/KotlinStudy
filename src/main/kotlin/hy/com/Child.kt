@@ -43,6 +43,9 @@ class Child(name: String, age: Int) : Father(name, age) {
     }
 }
 
+/**
+ * 为类创建扩展方法
+ */
 fun Child.function(i: Int) {
     println("this is child class extension method")
 }
