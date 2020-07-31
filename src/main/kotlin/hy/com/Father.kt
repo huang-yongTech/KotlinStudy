@@ -5,7 +5,6 @@ package hy.com
  * description :
  */
 open class Father(name: String, age: Int) {
-
     init {
         println("this is father code, name is $name, age is $age")
     }
