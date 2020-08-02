@@ -25,11 +25,14 @@ fun main(args: Array<String>) {
 //    println(intPlus(1, 2))
 //    println(2.intPlus(3)) // 类扩展调⽤
 
-    val numbers = listOf("one", "two", "three", "four")
-    val filteredIdx = numbers.filterIndexed { index, s -> (index != 0) && (s.length < 5) }
-    val filteredNot = numbers.filterNot { it.length <= 3 }
-    println(filteredIdx)
-    println(filteredNot)
+//    val numbers = listOf("one", "two", "three", "four")
+//    val res : Pair<List<String>,List<String>> = numbers.partition { it.length > 3 }
+//    println(res.first)
+//    println(res.second)
+
+    val numbers = mutableListOf(1, 2, 3, 4, 3)
+    numbers.removeAt(1)
+    println(numbers)
 
 }
 
