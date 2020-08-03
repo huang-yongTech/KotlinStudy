@@ -1,6 +1,67 @@
 package hy.com
 
-fun main(args: Array<String>) {
+import kotlinx.coroutines.*
+
+fun main(args: Array<String>): Unit = runBlocking<Unit> {
+    launch(Dispatchers.Unconfined) { // ⾮受限的——将和主线程⼀起⼯作
+        println("Unconfined : I'm working in thread ${Thread.currentThread().name}")
+        delay(500)
+        println("Unconfined : After delay in thread ${Thread.currentThread().name}")
+    }
+    launch { // ⽗协程的上下⽂，主 runBlocking 协程
+        println("main runBlocking: I'm working in thread ${Thread.currentThread().name}")
+        delay(1000)
+        println("main runBlocking: After delay in thread ${Thread.currentThread().name}")
+    }
+//    launch(Dispatchers.Default) { // 将会获取默认调度器
+//        println("Default : I'm working in thread ${Thread.currentThread().name}")
+//    }
+//    launch(newSingleThreadContext("MyOwnThread")) { // 将使它获得⼀个新的线程
+//        println("newSingleThreadContext: I'm working in thread ${Thread.currentThread().name}")
+//    }
+}
+
+suspend fun failedConcurrentSum(): Int = coroutineScope {
+    val one = async<Int> {
+        try {
+            delay(Long.MAX_VALUE) // 模拟⼀个⻓时间的运算
+            42
+        } finally {
+            println("First child was cancelled")
+        }
+    }
+    val two = async<Int> {
+        println("Second child throws an exception")
+        throw ArithmeticException()
+    }
+    one.await() + two.await()
+}
+
+suspend fun concurrentSum(): Int = coroutineScope {
+    val num1 = somethingUsefulOneAsync()
+    val num2 = somethingUsefulTwoAsync()
+
+    num1.await() + num2.await()
+}
+
+fun somethingUsefulOneAsync() = GlobalScope.async {
+    doSomethingUsefulOne()
+}
+
+fun somethingUsefulTwoAsync() = GlobalScope.async {
+    doSomethingUsefulTwo()
+}
+
+suspend fun doSomethingUsefulOne(): Int {
+    delay(1000L)
+    return 13
+}
+
+suspend fun doSomethingUsefulTwo(): Int {
+    delay(1000L)
+    return 29
+}
+
 //    val child = Child("zhang san", 12)
 //    println(Childhaha())
 //
@@ -14,9 +75,9 @@ fun main(args: Array<String>) {
 //    derived.print()
 //    println(derived.message)
 
-    /**
-     * 函数类型实例调用
-     */
+/**
+ * 函数类型实例调用
+ */
 //    val stringPlus: (String, String) -> String = String::plus
 //    val intPlus: Int.(Int) -> Int = Int::plus
 //    println(stringPlus.invoke("<-", "->"))
@@ -29,12 +90,6 @@ fun main(args: Array<String>) {
 //    val res : Pair<List<String>,List<String>> = numbers.partition { it.length > 3 }
 //    println(res.first)
 //    println(res.second)
-
-    val numbers = mutableListOf(1, 2, 3, 4, 3)
-    numbers.removeAt(1)
-    println(numbers)
-
-}
 
 
 /**
