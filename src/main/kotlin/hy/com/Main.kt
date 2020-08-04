@@ -1,25 +1,47 @@
 package hy.com
 
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 
 fun main(args: Array<String>): Unit = runBlocking<Unit> {
-    launch(Dispatchers.Unconfined) { // ⾮受限的——将和主线程⼀起⼯作
-        println("Unconfined : I'm working in thread ${Thread.currentThread().name}")
-        delay(500)
-        println("Unconfined : After delay in thread ${Thread.currentThread().name}")
-    }
-    launch { // ⽗协程的上下⽂，主 runBlocking 协程
-        println("main runBlocking: I'm working in thread ${Thread.currentThread().name}")
-        delay(1000)
-        println("main runBlocking: After delay in thread ${Thread.currentThread().name}")
-    }
-//    launch(Dispatchers.Default) { // 将会获取默认调度器
-//        println("Default : I'm working in thread ${Thread.currentThread().name}")
-//    }
-//    launch(newSingleThreadContext("MyOwnThread")) { // 将使它获得⼀个新的线程
-//        println("newSingleThreadContext: I'm working in thread ${Thread.currentThread().name}")
-//    }
+
+    val sum = (1..5).asFlow()
+        .map { it * it }
+        .reduce { accumulator, value -> accumulator + value }
+    println(sum)
 }
+
+fun numbers(): Flow<Int> = flow {
+    try {
+        emit(1)
+        emit(2)
+        println("this line will not be executed")
+        emit(3)
+        emit(4)
+    } finally {
+        println("finally in numbers")
+    }
+}
+
+suspend fun performRequest(request: Int): String {
+    delay(1000) // 模仿⻓时间运⾏的异步⼯作
+    return "response $request"
+}
+
+fun foo(): Flow<Int> = flow {
+    println("Flow started")
+
+    for (i in 1..3) {
+        delay(1000L)
+        println("emitting $i")
+        emit(i)
+    }
+}
+
+/**
+ * 日志打印
+ */
+fun log(msg: String) = println("[${Thread.currentThread().name}] $msg")
 
 suspend fun failedConcurrentSum(): Int = coroutineScope {
     val one = async<Int> {
@@ -61,6 +83,17 @@ suspend fun doSomethingUsefulTwo(): Int {
     delay(1000L)
     return 29
 }
+
+//val threadLocal = ThreadLocal<String>()
+//threadLocal.set("main")
+//println("Pre-main, current thread: ${Thread.currentThread()}, thread local value:'${threadLocal.get()}'")
+//val job = launch(Dispatchers.Default + threadLocal.asContextElement(value = "launch")) {
+//    println("Launch start, current thread: ${Thread.currentThread()}, thread local value:'${threadLocal.get()}'")
+//    yield()
+//    println("After yield, current thread: ${Thread.currentThread()}, thread local value:'${threadLocal.get()}'")
+//}
+//job.join()
+//println("Post-main, current thread: ${Thread.currentThread()}, thread local value:'${threadLocal.get()}'")
 
 //    val child = Child("zhang san", 12)
 //    println(Childhaha())
@@ -141,7 +174,7 @@ inline fun <reified T : Enum<T>> printAllValues() {
 /**
  * 通过@go_on的形式，可以跳过循环当前的执行逻辑，继续执行下一逻辑
  */
-fun foo() {
+fun func() {
     listOf(1, 2, 3, 4, 5).forEach go_on@{
         if (it == 3)
             return@go_on
