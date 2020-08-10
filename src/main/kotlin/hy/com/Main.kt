@@ -2,13 +2,27 @@ package hy.com
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlin.system.measureTimeMillis
 
+@ExperimentalCoroutinesApi
+@FlowPreview
 fun main(args: Array<String>): Unit = runBlocking<Unit> {
+    try {
+        foo().collect { value: Int ->
+            println(value)
+            check(value = value <= 1) {
+                "Collected $value"
+            }
+        }
+    } catch (e: Throwable) {
+        println("Caught $e")
+    }
+}
 
-    val sum = (1..5).asFlow()
-        .map { it * it }
-        .reduce { accumulator, value -> accumulator + value }
-    println(sum)
+fun requestFlow(i: Int) = flow {
+    emit("$i : First")
+    delay(500)
+    emit("$i : Second")
 }
 
 fun numbers(): Flow<Int> = flow {
@@ -30,10 +44,8 @@ suspend fun performRequest(request: Int): String {
 
 fun foo(): Flow<Int> = flow {
     println("Flow started")
-
     for (i in 1..3) {
-        delay(1000L)
-        println("emitting $i")
+        delay(100L)
         emit(i)
     }
 }
