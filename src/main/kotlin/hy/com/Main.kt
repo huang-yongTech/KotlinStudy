@@ -1,21 +1,65 @@
 package hy.com
 
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.channels.produce
 import kotlinx.coroutines.flow.*
 import kotlin.system.measureTimeMillis
 
 @ExperimentalCoroutinesApi
 @FlowPreview
 fun main(args: Array<String>): Unit = runBlocking<Unit> {
-    try {
-        foo().collect { value: Int ->
-            println(value)
-            check(value = value <= 1) {
-                "Collected $value"
-            }
+    var numbers = numbersFrom(2)
+
+    repeat(10) {
+        val primes = numbers.receive()
+        println(primes)
+        numbers = filter(numbers, primes)
+    }
+
+    println("Done!")
+    coroutineContext.cancelChildren()
+}
+
+@ExperimentalCoroutinesApi
+fun CoroutineScope.numbersFrom(x: Int): ReceiveChannel<Int> = produce {
+    var start = x
+    while (true) {
+        send(start++)
+    }
+}
+
+@ExperimentalCoroutinesApi
+fun CoroutineScope.filter(numbers: ReceiveChannel<Int>, prime: Int): ReceiveChannel<Int> = produce {
+    for (x in numbers) {
+        if (x % prime != 0) {
+            send(x)
         }
-    } catch (e: Throwable) {
-        println("Caught $e")
+    }
+}
+
+@ExperimentalCoroutinesApi
+fun CoroutineScope.produceNumbers(): ReceiveChannel<Int> = produce {
+    var x = 1
+    while (true) {
+        send(x++)
+    }
+}
+
+@ExperimentalCoroutinesApi
+fun CoroutineScope.square(numbers: ReceiveChannel<Int>): ReceiveChannel<Int> = produce {
+    for (x in numbers) {
+        send(x * x)
+    }
+}
+
+@ExperimentalCoroutinesApi
+fun CoroutineScope.produceSquares(): ReceiveChannel<Int> = produce {
+    for (x in 1..5) {
+        delay(1000)
+        send(x)
     }
 }
 
@@ -45,7 +89,8 @@ suspend fun performRequest(request: Int): String {
 fun foo(): Flow<Int> = flow {
     println("Flow started")
     for (i in 1..3) {
-        delay(100L)
+        println("Emitting $i")
+        delay(1000L)
         emit(i)
     }
 }
@@ -95,6 +140,26 @@ suspend fun doSomethingUsefulTwo(): Int {
     delay(1000L)
     return 29
 }
+
+/**
+ * 协程流式处理
+ */
+//foo()
+//.onEach { value ->
+//    check(value = value <= 1) { "Collect value $value" }
+//    println(value)
+//}
+//.onCompletion { cause ->
+//    if (cause != null) {
+//        println("Flow completed exceptionally")
+//    } else {
+//        println("Done")
+//    }
+//}
+//.catch { e -> println("Caught $e") }
+//.launchIn(this)
+//
+//println("Main coroutine is done")
 
 //val threadLocal = ThreadLocal<String>()
 //threadLocal.set("main")
