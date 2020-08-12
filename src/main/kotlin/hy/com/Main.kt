@@ -1,28 +1,53 @@
 package hy.com
 
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.channels.consumeEach
-import kotlinx.coroutines.channels.produce
+import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.*
+import java.io.IOException
 import kotlin.system.measureTimeMillis
 
+@ObsoleteCoroutinesApi
 @ExperimentalCoroutinesApi
 @FlowPreview
 fun main(args: Array<String>): Unit = runBlocking<Unit> {
-    var numbers = numbersFrom(2)
-
-    repeat(10) {
-        val primes = numbers.receive()
-        println(primes)
-        numbers = filter(numbers, primes)
+    val handler = CoroutineExceptionHandler { _, exception ->
+        println("Caught original $exception")
     }
 
-    println("Done!")
-    coroutineContext.cancelChildren()
+    supervisorScope {
+        val child = launch(handler) {
+            println("Child throws an exception")
+            throw AssertionError()
+        }
+        println("Scope is completing")
+    }
+    println("Scope is completed")
 }
 
+data class Ball(var hits: Int)
+
+/**
+ * 协程通道公平性验证
+ */
+suspend fun player(name: String, table: Channel<Ball>) {
+    for (ball in table) {
+        ball.hits++
+        println("$name $ball")
+        delay(500)
+        table.send(ball)
+    }
+}
+
+suspend fun CoroutineScope.sendString(channel: SendChannel<String>, s: String, time: Long) {
+    while (true) {
+        delay(time)
+        channel.send(s)
+    }
+}
+
+/**
+ * 协程管道的使用
+ */
 @ExperimentalCoroutinesApi
 fun CoroutineScope.numbersFrom(x: Int): ReceiveChannel<Int> = produce {
     var start = x
@@ -41,10 +66,21 @@ fun CoroutineScope.filter(numbers: ReceiveChannel<Int>, prime: Int): ReceiveChan
 }
 
 @ExperimentalCoroutinesApi
+fun CoroutineScope.launchProcessor(id: Int, channel: ReceiveChannel<Int>): ReceiveChannel<Int> = produce {
+    for (msg in channel) {
+        println("Processor $id received $msg")
+    }
+}
+
+/**
+ * 协程管道的使用
+ */
+@ExperimentalCoroutinesApi
 fun CoroutineScope.produceNumbers(): ReceiveChannel<Int> = produce {
     var x = 1
     while (true) {
         send(x++)
+        delay(100)
     }
 }
 
