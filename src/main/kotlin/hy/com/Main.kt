@@ -10,18 +10,9 @@ import kotlin.system.measureTimeMillis
 @ExperimentalCoroutinesApi
 @FlowPreview
 fun main(args: Array<String>): Unit = runBlocking<Unit> {
-    val handler = CoroutineExceptionHandler { _, exception ->
-        println("Caught original $exception")
-    }
-
-    supervisorScope {
-        val child = launch(handler) {
-            println("Child throws an exception")
-            throw AssertionError()
-        }
-        println("Scope is completing")
-    }
-    println("Scope is completed")
+    val baseImpl = BaseImpl(1)
+    val baseImpl1 = BaseImpl1(2)
+    println(baseImpl1.message)
 }
 
 data class Ball(var hits: Int)
@@ -260,15 +251,28 @@ fun List<String>.getShortWordsTo(shortWords: MutableList<String>, maxLength: Int
  */
 interface Base {
     val message: String
-    fun print()
+    fun print() {
+        println("这是base的默认实现")
+    }
 }
 
-class BaseImpl(val x: Int) : Base {
-    override val message = "BaseImpl: x = $x"
+open class BaseImpl(x: Int) : Base {
+    override var message = "BaseImpl: x = $x"
     override fun print() {
         println(message)
     }
 }
+
+class BaseImpl1(x: Int) : BaseImpl(x) {
+    override var message = "BaseImpl1: x = $x"
+
+    override fun print() {
+        println(message)
+    }
+}
+
+val BaseImpl1.message: String
+    get() = "扩展属性：2"
 
 class Derived(b: Base) : Base by b {
     // 在 b 的 `print` 实现中不会访问到这个属性
